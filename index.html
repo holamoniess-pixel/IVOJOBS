@@ -289,9 +289,10 @@
     </div>
 <script>
     // --- CONFIG & HELPERS ---
-    const API = window.location.hostname.includes("localhost")
+ const API = window.location.hostname.includes("localhost")
   ? "http://localhost:4000/api"
-  : "https://ivo-backend.onrender.com/api";
+  : "https://ivpjobs-backend.vercel.app/api";
+
     let token = localStorage.getItem('ivo_token') || null;
     let currentUser = null; // filled after /me
     let isBackendReady = true; // NEW STATE FLAG
