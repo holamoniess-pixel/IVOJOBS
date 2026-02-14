@@ -82,6 +82,27 @@ app.use((req, res, next) => {
   next();
 });
 
+// Database Connection Fallback
+let isUsingMockDB = false;
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/ivojobs';
+
+mongoose.connect(MONGO_URI, {
+  serverSelectionTimeoutMS: 5000 // 5 seconds timeout
+})
+  .then(() => {
+    console.log('✅ Connected to MongoDB');
+    isUsingMockDB = false;
+    app.set('isUsingMockDB', false);
+  })
+  .catch(err => {
+    console.error('❌ Could not connect to MongoDB. Switching to IN-MEMORY MOCK MODE.');
+    isUsingMockDB = true;
+    app.set('isUsingMockDB', true);
+  });
+
+// Global flag for routes (Initial)
+app.set('isUsingMockDB', isUsingMockDB);
+
 // Routes
 const authRoutes = require('./routes/auth');
 const profileRoutes = require('./routes/profile');
@@ -94,7 +115,7 @@ app.use('/api/jobs', jobRoutes);
 app.use('/api/ai', aiRoutes);
 
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date(), mode: isUsingMockDB ? 'memory' : 'mongo' });
+  res.status(200).json({ status: 'ok', timestamp: new Date(), mode: app.get('isUsingMockDB') ? 'memory' : 'mongo' });
 });
 
 // API 404 Handler (Must be before static files to prevent HTML 404s for API)
@@ -106,19 +127,6 @@ app.use('/api/*', (req, res) => {
 app.use(express.static(path.join(__dirname, '../'))); // Serve root files
 app.use('/assets', express.static(path.join(__dirname, '../assets')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Database Connection Fallback
-let isUsingMockDB = false;
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/ivojobs')
-  .then(() => console.log('✅ Connected to MongoDB'))
-  .catch(err => {
-    console.error('❌ Could not connect to MongoDB. Switching to IN-MEMORY MOCK MODE.');
-    isUsingMockDB = true;
-    app.set('isUsingMockDB', true);
-  });
-
-// Global flag for routes (Initial)
-app.set('isUsingMockDB', isUsingMockDB);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

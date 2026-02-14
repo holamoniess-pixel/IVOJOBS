@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BEDG5GNDG5"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-N309KJ1M2E"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag() { dataLayer.push(arguments); }
         gtag('js', new Date());
-        gtag('config', 'G-BEDG5GNDG5');
+        gtag('config', 'G-N309KJ1M2E');
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -166,9 +166,9 @@
         <div class="modal-content glass-panel">
             <span class="close" onclick="closeModal('login-modal')">x</span>
             <h2>Login to IVO</h2>
-            <input type="email" placeholder="Email Address" required>
-            <input type="password" placeholder="Password" required>
-            <button onclick="login()">Login</button>
+            <input type="email" id="login-email" placeholder="Email Address" required>
+            <input type="password" id="login-password" placeholder="Password" required>
+            <button onclick="handleLogin()">Login</button>
             <div class="switch">Don't have an account? <a href="#" onclick="switchModal('login-modal','signup-modal')">Sign Up</a></div>
         </div>
     </div>

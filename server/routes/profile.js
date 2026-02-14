@@ -113,4 +113,21 @@ router.get('/professionals', async (req, res) => {
     }
 });
 
+// Get single professional profile
+router.get('/:id', async (req, res) => {
+    try {
+        if (req.app.get('isUsingMockDB')) {
+            const user = req.app.locals.mockUsers.find(u => u._id === req.params.id);
+            if (!user) return res.status(404).json({ message: 'Professional not found' });
+            const { password, ...rest } = user;
+            return res.json(rest);
+        }
+        const user = await User.findById(req.params.id).select('-password');
+        if (!user) return res.status(404).json({ message: 'Professional not found' });
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching professional profile' });
+    }
+});
+
 module.exports = router;

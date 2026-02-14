@@ -103,6 +103,16 @@ function smoothScroll(target) {
 // -----------------------------------------------------------------------------
 // AUTHENTICATION
 // -----------------------------------------------------------------------------
+async function handleLogin() {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) {
+    showNotification("Please enter email and password.", "error");
+    return;
+  }
+  await login(email, password);
+}
+
 async function login(email, password) {
   try {
     const data = await api('/auth/login', {
@@ -112,12 +122,45 @@ async function login(email, password) {
     token = data.token;
     localStorage.setItem("ivo_token", token);
     localStorage.setItem("ivo_userId", data.userId);
-    closeModal('login-modal'); // Assuming this modal exists or will be created
+    closeModal('login-modal');
     checkAuth();
     showNotification("Logged in successfully!");
   } catch (err) {
     showNotification(err.message, 'error');
   }
+}
+
+async function signup() {
+  const name = document.getElementById('signup-name').value;
+  const email = document.getElementById('signup-email').value;
+  const phone = document.getElementById('signup-number').value;
+  const password = document.getElementById('signup-password').value;
+  const confirm = document.getElementById('signup-confirm-password').value;
+
+  if (password !== confirm) {
+    showNotification("Passwords do not match.", "error");
+    return;
+  }
+
+  try {
+    const data = await api('/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify({ name, email, phone, password })
+    });
+    token = data.token;
+    localStorage.setItem("ivo_token", token);
+    localStorage.setItem("ivo_userId", data.userId);
+    closeModal('signup-modal');
+    checkAuth();
+    showNotification("Account created successfully!");
+  } catch (err) {
+    showNotification(err.message, 'error');
+  }
+}
+
+function switchModal(oldId, newId) {
+  closeModal(oldId);
+  openModal(newId);
 }
 
 function logout() {
@@ -155,6 +198,84 @@ async function searchWorkers() {
   } catch (err) {
     console.error(err);
     showNotification("Failed to load professionals.", 'error');
+  }
+}
+
+async function viewProfile(userId) {
+  try {
+    const user = await api(`/profile/${userId}`);
+    document.getElementById('profile-name').innerText = user.name;
+    document.getElementById('profile-title').innerText = user.headline || 'Professional';
+    document.getElementById('profile-company').innerText = user.company || 'Freelance';
+    document.getElementById('profile-skills').innerText = `Skills: ${user.skills ? user.skills.join(', ') : 'N/A'}`;
+    openModal('profile-modal');
+  } catch (err) {
+    showNotification("Failed to load profile.", "error");
+  }
+}
+
+async function showProfileDashboard() {
+  if (!token) return;
+  try {
+    const user = await api('/profile/me');
+    document.getElementById('my-profile-name').innerText = user.name;
+    document.getElementById('my-profile-headline').innerText = user.headline || 'Add a headline';
+    document.getElementById('my-profile-location').innerText = user.location || 'Location not set';
+    document.getElementById('my-profile-contact').innerText = user.email;
+    document.getElementById('my-profile-avatar').src = user.avatar || 'https://placehold.co/120x120/0d47a1/ffffff?text=ME';
+    document.getElementById('my-profile-about').innerText = user.about || 'Tell us about yourself...';
+    
+    // Pre-fill edit modal
+    document.getElementById('edit-name').value = user.name;
+    document.getElementById('edit-headline').value = user.headline || '';
+    document.getElementById('edit-location').value = user.location || '';
+    document.getElementById('edit-contact').value = user.email || '';
+    document.getElementById('edit-about').value = user.about || '';
+    
+    // Skills
+    const skillsContainer = document.getElementById('my-profile-skills');
+    skillsContainer.innerHTML = (user.skills || []).map(s => `<span class="skill-tag">${s}</span>`).join('');
+    
+    openModal('my-profile-modal');
+  } catch (err) {
+    showNotification("Failed to load dashboard.", "error");
+  }
+}
+
+function openEditModal() {
+  closeModal('my-profile-modal');
+  openModal('edit-profile-modal');
+}
+
+async function saveProfileChanges() {
+  const name = document.getElementById('edit-name').value;
+  const headline = document.getElementById('edit-headline').value;
+  const location = document.getElementById('edit-location').value;
+  const contact = document.getElementById('edit-contact').value;
+  const about = document.getElementById('edit-about').value;
+  const avatarFile = document.getElementById('edit-avatar').files[0];
+
+  const formData = new FormData();
+  formData.append('name', name);
+  formData.append('headline', headline);
+  formData.append('location', location);
+  formData.append('contact', contact);
+  formData.append('about', about);
+  if (avatarFile) {
+    formData.append('avatar', avatarFile);
+  }
+
+  try {
+    await api('/profile', {
+      method: 'PATCH',
+      body: formData
+    });
+    showNotification("Profile updated successfully!");
+    closeModal('edit-profile-modal');
+    showProfileDashboard(); // Re-open dashboard to see changes
+    searchWorkers(); // Refresh grid
+  } catch (err) {
+    showNotification(err.message, 'error');
   }
 }
 
