@@ -1,0 +1,74 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: mvp
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d mvp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    command: ["redis-server","--appendonly","yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD","redis-cli","ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mcp-connector:
+    build: ./services/mcp-connector
+    restart: always
+    ports:
+      - "4001:4001"
+    healthcheck:
+      test: ["CMD","curl","-f","http://localhost:4001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: ./apps/web
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://admin:admin@postgres:5432/mvp
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: ./apps/web
+    restart: always
+    command: ["npm","run","worker"]
+    environment:
+      DATABASE_URL: postgresql://admin:admin@postgres:5432/mvp
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  redisdata:

@@ -1,0 +1,14 @@
+{
+  "name": "fullstack-mvp",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "services/*"
+  ],
+  "scripts": {
+    "dev:web": "npm --prefix apps/web run dev",
+    "build:web": "npm --prefix apps/web run build",
+    "start:web": "npm --prefix apps/web run start",
+    "dev:mcp": "node services/mcp-connector/index.js"
+  }
+}
